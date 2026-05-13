@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# DOCKER_HOST из шелла перебивает docker context, поэтому без unset стек
+# уехал бы в default-профиль вместо изолированного claude.
+unset DOCKER_HOST
+export DOCKER_CONTEXT=colima-claude
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+COMPOSE_FILE="$SCRIPT_DIR/mcp-stack/compose.yaml"
+
+# Сеть external в compose — создать её должен кто-то другой.
+docker network inspect cc-net &>/dev/null || docker network create cc-net >/dev/null
+
+exec docker compose -f "$COMPOSE_FILE" "$@"

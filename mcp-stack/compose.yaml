@@ -1,0 +1,27 @@
+name: cc-mcp
+
+networks:
+  default:
+    name: cc-net
+    external: true
+
+services:
+  playwright:
+    image: mcr.microsoft.com/playwright/mcp
+    container_name: playwright-mcp
+    restart: unless-stopped
+    init: true
+    # У образа нестандартный entrypoint — нужно явно вызывать cli.js через node,
+    # иначе флаги уходят не туда. Команда взята из официальной инструкции
+    # microsoft/playwright-mcp (Docker раздел README).
+    entrypoint: ["node", "/app/cli.js"]
+    command:
+      - --headless
+      - --browser=chromium
+      - --no-sandbox
+      - --port=8931
+      - --host=0.0.0.0
+      # Без этого сервер отбивает 403 "Access is only allowed at localhost:8931"
+      # на запросы из cc-контейнеров (DNS-rebinding защита). В нашей изолированной
+      # сети cc-net эта угроза неприменима, отключаем проверку.
+      - --allowed-hosts=*

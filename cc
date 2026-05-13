@@ -76,6 +76,9 @@ if [ "$ctx" != "colima-claude" ]; then
   docker context use colima-claude >/dev/null
 fi
 
+# ── Сеть для MCP-сайдкаров (поднимаются через ./cc-mcp) ──
+docker network inspect cc-net &>/dev/null || docker network create cc-net >/dev/null
+
 # ── Собрать образ если нет ──
 if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
   echo "Building image $IMAGE_NAME ..."
@@ -121,6 +124,7 @@ trap '
 
 docker run -it --rm \
   --name "$CONTAINER_NAME" \
+  --network cc-net \
   --group-add "$SOCK_GID" \
   -v "$MOUNT_ROOT_REAL:$MOUNT_ROOT_REAL" \
   -v "$HOME/.claude:/home/claude/.claude" \
