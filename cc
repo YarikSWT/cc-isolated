@@ -104,10 +104,20 @@ fi
 # обратно, чтобы обновления из контейнера попали на хост.
 HOST_CLAUDE_JSON="$HOME/.claude.json"
 SHARED_CLAUDE_JSON="$HOME/.claude/.cc-host-claude.json"
+# cp + mv = atomic publish: читатель в контейнере либо видит старый файл, либо новый,
+# никогда полу-записанный (важно потому что хост-claude и контейнер-claude могут
+# читать одновременно).
 if [ -f "$HOST_CLAUDE_JSON" ]; then
-  cp -p "$HOST_CLAUDE_JSON" "$SHARED_CLAUDE_JSON"
+  cp -p "$HOST_CLAUDE_JSON" "${SHARED_CLAUDE_JSON}.tmp"
+  mv -f "${SHARED_CLAUDE_JSON}.tmp" "$SHARED_CLAUDE_JSON"
 fi
-trap '[ -f "$SHARED_CLAUDE_JSON" ] && cp -p "$SHARED_CLAUDE_JSON" "$HOST_CLAUDE_JSON" 2>/dev/null || true' EXIT INT TERM
+trap '
+  if [ -f "$SHARED_CLAUDE_JSON" ]; then
+    cp -p "$SHARED_CLAUDE_JSON" "${HOST_CLAUDE_JSON}.tmp" 2>/dev/null \
+      && mv -f "${HOST_CLAUDE_JSON}.tmp" "$HOST_CLAUDE_JSON" 2>/dev/null \
+      || rm -f "${HOST_CLAUDE_JSON}.tmp" 2>/dev/null
+  fi
+' EXIT INT TERM
 
 docker run -it --rm \
   --name "$CONTAINER_NAME" \
