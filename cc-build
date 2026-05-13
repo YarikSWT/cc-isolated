@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+unset DOCKER_HOST
+export DOCKER_CONTEXT=colima-claude
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+IMAGE_NAME="claude-sandbox:latest"
+
+echo "Building $IMAGE_NAME ..."
+docker build --no-cache --build-arg HOST_UID="$(id -u)" -t "$IMAGE_NAME" "$SCRIPT_DIR"
+echo "Done."
